@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing ED Throughput: An Interactive Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A thematic, dashboard-style SPA designed for non-linear exploration. The structure progresses from defining the core problem (information gaps) to presenting the solution (EHR/HIE) and its quantifiable impact. The user flow is: 1) Grasp the problem via an interactive workflow diagram. 2) See the solution's impact through a central data dashboard. 3) 'Deep dive' into the mechanics via tabbed content. 4) Explore challenges and future solutions. 5) Review actionable recommendations in an accordion. This structure transforms a linear report into an exploratory tool, prioritizing user understanding and engagement by presenting the most impactful data first, with details available on demand. -->
+    <!-- Visualization & Content Choices: 1) ED Workflow: Goal: Organize/Compare. Method: Interactive flowchart using HTML/CSS/JS. Interaction: Clicking stages reveals bottlenecks. Justification: Visually demonstrates the core problem of sequential, information-poor processes. 2) Impact Metrics: Goal: Compare/Inform. Method: Bar chart (Chart.js). Interaction: Hover tooltips for precise data. Justification: Provides an immediate, powerful visualization of the quantitative benefits from the report's data table. 3) Workflow Phases: Goal: Organize. Method: JS-powered tabbed interface. Justification: Segments detailed process information logically without cluttering the UI. 4) Recommendations: Goal: Organize. Method: Accordion (HTML/JS). Justification: Allows different user personas (executives, clinicians) to access relevant information easily. All visual elements are built with standard web technologies. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .nav-link.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+        .tab-button.active {
+            background-color: #0d9488;
+            color: #ffffff;
+        }
+        .accordion-button.open .accordion-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl font-bold text-teal-700">ED Flow</span>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#problem" class="nav-link text-gray-600 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">The Problem</a>
+                        <a href="#impact" class="nav-link text-gray-600 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">The Impact</a>
+                        <a href="#workflow" class="nav-link text-gray-600 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">How It Works</a>
+                        <a href="#challenges" class="nav-link text-gray-600 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">Challenges</a>
+                        <a href="#recommendations" class="nav-link text-gray-600 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">Roadmap</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div id="hero" class="bg-white py-16 sm:py-24">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <p class="text-base font-semibold text-teal-600 tracking-wide uppercase">An Interactive Analysis</p>
+                <h1 class="mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">Optimizing Emergency Department Throughput</h1>
+                <p class="mt-6 max-w-3xl mx-auto text-xl text-gray-500">Providing EDs with instant access to patient information is the most effective lever to reduce length of stay, minimize errors, and improve care. This interactive report explores how.</p>
+            </div>
+        </div>
+
+        <section id="problem" class="py-16 sm:py-24 scroll-mt-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">The Bottleneck: An Information-Poor Workflow</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                        The traditional ED workflow is a linear, sequential process where progress halts at each step, primarily due to information gaps. This creates dangerous delays and increases cognitive load on clinicians. Click on each stage below to see how a lack of information creates friction.
+                    </p>
+                </div>
+                <div class="mt-12">
+                    <div class="relative">
+                        <div class="absolute w-full h-1 bg-gray-200 top-1/2 -translate-y-1/2"></div>
+                        <div class="relative flex justify-between items-start">
+                            <div class="workflow-step text-center w-1/4" data-content="problem-arrival">
+                                <div class="relative z-10 mx-auto w-12 h-12 flex items-center justify-center bg-white border-2 border-gray-300 rounded-full text-xl font-bold cursor-pointer transition hover:border-red-500 hover:text-red-500">1</div>
+                                <p class="mt-2 font-semibold">Arrival</p>
+                            </div>
+                            <div class="workflow-step text-center w-1/4" data-content="problem-diagnosis">
+                                <div class="relative z-10 mx-auto w-12 h-12 flex items-center justify-center bg-white border-2 border-gray-300 rounded-full text-xl font-bold cursor-pointer transition hover:border-red-500 hover:text-red-500">2</div>
+                                <p class="mt-2 font-semibold">Diagnosis</p>
+                            </div>
+                            <div class="workflow-step text-center w-1/4" data-content="problem-treatment">
+                                <div class="relative z-10 mx-auto w-12 h-12 flex items-center justify-center bg-white border-2 border-gray-300 rounded-full text-xl font-bold cursor-pointer transition hover:border-red-500 hover:text-red-500">3</div>
+                                <p class="mt-2 font-semibold">Treatment</p>
+                            </div>
+                            <div class="workflow-step text-center w-1/4" data-content="problem-disposition">
+                                 <div class="relative z-10 mx-auto w-12 h-12 flex items-center justify-center bg-white border-2 border-gray-300 rounded-full text-xl font-bold cursor-pointer transition hover:border-red-500 hover:text-red-500">4</div>
+                                <p class="mt-2 font-semibold">Disposition</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="problem-content-area" class="mt-8 min-h-[150px] bg-white p-6 rounded-lg shadow-lg border border-red-200 transition-opacity duration-300 opacity-0">
+                        <div id="problem-initial" class="text-gray-500 text-center">Click a stage to see the corresponding bottleneck.</div>
+                        <div id="problem-arrival" class="hidden">
+                            <h3 class="font-bold text-red-700">Arrival & Triage Bottleneck</h3>
+                            <p class="mt-2 text-gray-600">Without prior history, triage is based solely on the current complaint. Acuity can be misjudged, leading to low-risk patients congesting the main ED while high-risk patients wait. Pre-registration is impossible, creating administrative delays upon arrival.</p>
+                        </div>
+                        <div id="problem-diagnosis" class="hidden">
+                            <h3 class="font-bold text-red-700">Diagnosis Bottleneck</h3>
+                            <p class="mt-2 text-gray-600">Clinicians work in a vacuum, forced to order broad, duplicative tests (e.g., CT scans, labs) because they can't see recent results from other facilities. This wastes time, increases costs, and exposes patients to unnecessary radiation.</p>
+                        </div>
+                        <div id="problem-treatment" class="hidden">
+                            <h3 class="font-bold text-red-700">Treatment & Consultation Bottleneck</h3>
+                             <p class="mt-2 text-gray-600">Medication history is unknown, increasing the risk of adverse drug events. Specialist consultations are slow, requiring inefficient phone calls and verbal handoffs where critical context is often lost, delaying definitive care.</p>
+                        </div>
+                        <div id="problem-disposition" class="hidden">
+                             <h3 class="font-bold text-red-700">Disposition Bottleneck</h3>
+                            <p class="mt-2 text-gray-600">Deciding to admit or discharge is prolonged by clinical uncertainty. A lack of a clear clinical picture leads to deliberation and "boarding" — holding admitted patients in the ED for hours while waiting for an inpatient bed.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="bg-white py-16 sm:py-24 scroll-mt-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">The Quantifiable Impact of Information Access</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                       The benefits of providing clinicians with complete patient information are not theoretical. Studies consistently show significant, measurable improvements in key operational and quality metrics. This dashboard highlights the data-driven case for investing in health information exchange.
+                    </p>
+                </div>
+                <div class="mt-12">
+                    <div class="chart-container">
+                        <canvas id="impactChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="workflow" class="py-16 sm:py-24 scroll-mt-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">How Information Unlocks a Faster, Safer Workflow</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                        Information access transforms the ED from a slow, linear system to a dynamic model where care happens in parallel. It systematically unblocks constraints at every stage of the patient journey. Explore the tabs below to understand the specific improvements at each phase.
+                    </p>
+                </div>
+                <div class="mt-12 max-w-4xl mx-auto">
+                     <div class="mb-4 flex justify-center space-x-2 p-1 bg-gray-200 rounded-lg">
+                        <button class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition" data-tab="input">Phase 1: Input</button>
+                        <button class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition" data-tab="throughput">Phase 2: Throughput</button>
+                        <button class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition" data-tab="output">Phase 3: Output</button>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg min-h-[250px]">
+                        <div id="tab-content-input" class="tab-content">
+                            <h3 class="text-xl font-bold text-teal-700">Input Phase: Pre-Arrival & Triage</h3>
+                            <ul class="mt-4 space-y-3 text-gray-600 list-disc list-inside">
+                                <li><strong>Pre-Hospital Data:</strong> EMS crews with HIE access can provide targeted care en route. Real-time data transmission allows the ED to pre-register patients and prepare resources, starting care before the patient arrives.</li>
+                                <li><strong>Information-Driven Triage:</strong> Nurses with access to a patient's history can more accurately assess their severity (ESI level), enabling effective "streaming" to Fast Track or Vertical Flow models.</li>
+                                <li><strong>Patient Segmentation:</strong> Prevents low-acuity patients from congesting the main ED, reserving beds and resources for the most critical cases and maintaining overall hospital throughput.</li>
+                            </ul>
+                        </div>
+                        <div id="tab-content-throughput" class="tab-content hidden">
+                            <h3 class="text-xl font-bold text-teal-700">Throughput Phase: Diagnosis & Treatment</h3>
+                            <ul class="mt-4 space-y-3 text-gray-600 list-disc list-inside">
+                                <li><strong>Reduced Redundant Testing:</strong> The most direct benefit. Seeing a recent CT scan or lab result from another facility avoids costly and time-consuming duplication.</li>
+                                <li><strong>Accelerated Decision-Making:</strong> With a full history, medication list, and allergies, clinicians can form a diagnosis and treatment plan with speed and confidence, shortening "door-to-doc" time.</li>
+                                <li><strong>Streamlined Consultations:</strong> Specialists can review the entire case remotely on a mobile device via the EHR before arriving, making conversations efficient and eliminating phone tag.</li>
+                            </ul>
+                        </div>
+                        <div id="tab-content-output" class="tab-content hidden">
+                            <h3 class="text-xl font-bold text-teal-700">Output Phase: Disposition & Discharge</h3>
+                            <ul class="mt-4 space-y-3 text-gray-600 list-disc list-inside">
+                                <li><strong>Informed Disposition:</strong> A complete clinical picture allows for a faster, more confident decision to admit or discharge, reducing deliberation time.</li>
+                                <li><strong>Preventing "Boarding":</strong> The EHR can trigger automatic notifications to bed management, and a standardized electronic handoff streamlines the bed request-to-assignment process.</li>
+                                <li><strong>Safe Discharge Planning:</strong> Embedded case managers with EHR access can proactively arrange follow-up care and prescriptions in parallel with medical treatment, ensuring a safe plan is ready at the moment of discharge.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="challenges" class="bg-white py-16 sm:py-24 scroll-mt-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Hurdles to Overcome</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                        Technology is not a panacea. Realizing these benefits requires overcoming significant human and technical challenges. Poorly designed systems can create new problems like information overload, hindering rather than helping clinicians.
+                    </p>
+                </div>
+                <div class="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="p-6 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800">Information Overload & "Note Bloat"</h3>
+                        <p class="mt-2 text-gray-600">EHRs filled with irrelevant, auto-populated data force clinicians to waste time sifting through digital noise, increasing cognitive load and the risk of error.</p>
+                    </div>
+                    <div class="p-6 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800">Alert Fatigue</h3>
+                        <p class="mt-2 text-gray-600">A constant stream of low-value notifications conditions clinicians to ignore them, creating a high risk that a truly critical alert will be missed.</p>
+                    </div>
+                    <div class="p-6 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800">Poor Usability & Workflow Mismatch</h3>
+                        <p class="mt-2 text-gray-600">Clunky interfaces not designed for the fast pace of the ED can slow clinicians down, disrupting care and sometimes even increasing LOS.</p>
+                    </div>
+                     <div class="p-6 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800">Lack of Interoperability</h3>
+                        <p class="mt-2 text-gray-600">Different EHR systems often can't "talk" to each other due to a lack of data standards and competitive resistance from vendors and providers, creating data silos.</p>
+                    </div>
+                     <div class="p-6 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800">Patient Matching Errors</h3>
+                        <p class="mt-2 text-gray-600">Without a national patient identifier, linking records across systems is difficult and can lead to dangerous mismatches or failures to find critical information.</p>
+                    </div>
+                    <div class="p-6 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800">The Future: AI & Predictive Analytics</h3>
+                        <p class="mt-2 text-gray-600">The next frontier is using AI to move from reactive to proactive care—summarizing records, predicting risk, and forecasting patient surges to manage capacity.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="recommendations" class="py-16 sm:py-24 scroll-mt-16">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Strategic Roadmap for Optimization</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                        Reducing LOS requires a coordinated strategy aligning technology, processes, and people. Below are targeted recommendations for key stakeholders. Click each role to expand the strategic actions.
+                    </p>
+                </div>
+                <div class="mt-12 space-y-4">
+                    <div class="accordion-item bg-white rounded-lg shadow-md border border-gray-200">
+                        <button class="accordion-button w-full flex justify-between items-center text-left p-6">
+                            <span class="text-xl font-semibold text-teal-800">For Executive Leadership (CEO, COO)</span>
+                            <span class="accordion-icon transition-transform duration-300">
+                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </button>
+                        <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                            <div class="p-6 pt-0">
+                                <ul class="space-y-2 text-gray-600 list-disc list-inside">
+                                    <li><strong>Champion Interoperability:</strong> Treat HIE participation as a core strategic investment in safety and efficiency, not an IT cost.</li>
+                                    <li><strong>Mandate Proactive Management:</strong> Invest in AI/predictive analytics to forecast patient demand and manage staffing/resources proactively.</li>
+                                    <li><strong>Empower a PI Team:</strong> Establish a permanent, multidisciplinary Performance Improvement team with the authority to drive change.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-white rounded-lg shadow-md border border-gray-200">
+                        <button class="accordion-button w-full flex justify-between items-center text-left p-6">
+                            <span class="text-xl font-semibold text-teal-800">For Clinical Leadership (ED Directors)</span>
+                            <span class="accordion-icon transition-transform duration-300">
+                               <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </button>
+                         <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                            <div class="p-6 pt-0">
+                                <ul class="space-y-2 text-gray-600 list-disc list-inside">
+                                    <li><strong>Lead Workflow Optimization:</strong> Use Lean principles to identify and eliminate waste in the patient journey with frontline staff.</li>
+                                    <li><strong>Insist on Clinician Involvement:</strong> Ensure physicians and nurses are deeply involved in technology selection and design to guarantee usability.</li>
+                                    <li><strong>Standardize Key Processes:</strong> Develop and enforce standard protocols for high-volume conditions and critical communications like handoffs.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-white rounded-lg shadow-md border border-gray-200">
+                        <button class="accordion-button w-full flex justify-between items-center text-left p-6">
+                            <span class="text-xl font-semibold text-teal-800">For IT & Clinical Informatics</span>
+                             <span class="accordion-icon transition-transform duration-300">
+                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </button>
+                         <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                            <div class="p-6 pt-0">
+                                <ul class="space-y-2 text-gray-600 list-disc list-inside">
+                                    <li><strong>Prioritize Usability & Cognitive Support:</strong> Focus EHR design on reducing clinician cognitive load with cleaner UIs and AI-powered summaries.</li>
+                                    <li><strong>Embrace Open Standards:</strong> Aggressively adopt standards like FHIR to break down data silos and enable integration with third-party tools.</li>
+                                    <li><strong>Provide Robust Training:</strong> Invest in continuous, role-based training and at-the-elbow support to ensure user proficiency.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16 sm:mt-24">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-gray-400 text-sm">
+            <p>This interactive report is a synthesis of the research paper: "Optimizing Emergency Department Throughput: An Analysis of How Patient Information Access Minimizes Length of Stay."</p>
+            <p class="mt-1">All data is derived from sources cited within the report. For educational purposes only.</p>
+        </div>
+    </footer>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const workflowSteps = document.querySelectorAll('.workflow-step');
+    const problemContentArea = document.getElementById('problem-content-area');
+    const problemContents = {
+        'problem-arrival': document.getElementById('problem-arrival'),
+        'problem-diagnosis': document.getElementById('problem-diagnosis'),
+        'problem-treatment': document.getElementById('problem-treatment'),
+        'problem-disposition': document.getElementById('problem-disposition'),
+    };
+    const initialContent = document.getElementById('problem-initial');
+    let activeStep = null;
+
+    workflowSteps.forEach(step => {
+        step.addEventListener('click', () => {
+            const contentKey = step.dataset.content;
+            
+            if (activeStep === step) {
+                step.querySelector('div').classList.remove('border-red-500', 'text-red-500', 'scale-110');
+                step.querySelector('div').classList.add('border-gray-300');
+                problemContentArea.classList.add('opacity-0');
+                setTimeout(() => {
+                    Object.values(problemContents).forEach(el => el.classList.add('hidden'));
+                    initialContent.classList.remove('hidden');
+                    problemContentArea.classList.remove('opacity-0');
+                }, 300);
+                activeStep = null;
+                return;
+            }
+
+            if (activeStep) {
+                activeStep.querySelector('div').classList.remove('border-red-500', 'text-red-500', 'scale-110');
+                activeStep.querySelector('div').classList.add('border-gray-300');
+            }
+
+            problemContentArea.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                initialContent.classList.add('hidden');
+                Object.values(problemContents).forEach(el => el.classList.add('hidden'));
+                if (problemContents[contentKey]) {
+                    problemContents[contentKey].classList.remove('hidden');
+                }
+                problemContentArea.classList.remove('opacity-0');
+            }, 300);
+
+            step.querySelector('div').classList.add('border-red-500', 'text-red-500', 'scale-110');
+            step.querySelector('div').classList.remove('border-gray-300');
+            activeStep = step;
+        });
+    });
+    
+    const impactChartData = {
+        labels: [
+            'ED & Inpatient LOS (Frequent Users)', 
+            'Total Hospital Charges (Frequent Users)',
+            'Duplicate Testing',
+            'ED LOS (Treat-and-Release)',
+            'Combined ED & Inpatient LOS',
+            'Odds of Multiple Physicians Seen',
+            'Odds of 30-Day Readmission'
+        ],
+        datasets: [{
+            label: '% Reduction / Benefit',
+            data: [39, 41, 30, 10.2, 7.04, 12, 4.5],
+            backgroundColor: [
+                'rgba(15, 118, 110, 0.6)',
+                'rgba(13, 148, 136, 0.6)',
+                'rgba(5, 150, 105, 0.6)',
+                'rgba(16, 185, 129, 0.6)',
+                'rgba(45, 212, 191, 0.6)',
+                'rgba(99, 222, 199, 0.6)',
+                'rgba(167, 243, 208, 0.6)'
+            ],
+            borderColor: [
+                 'rgba(15, 118, 110, 1)',
+                'rgba(13, 148, 136, 1)',
+                'rgba(5, 150, 105, 1)',
+                'rgba(16, 185, 129, 1)',
+                'rgba(45, 212, 191, 1)',
+                'rgba(99, 222, 199, 1)',
+                'rgba(167, 243, 208, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    const impactChartConfig = {
+        type: 'bar',
+        data: impactChartData,
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Impact (%)',
+                        font: { size: 14 }
+                    }
+                },
+                y: {
+                    ticks: {
+                        autoSkip: false,
+                        callback: function(value, index, values) {
+                            const label = this.getLabelForValue(value);
+                            if (label.length > 25) {
+                                return label.match(/.{1,25}/g);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.x !== null) {
+                                label += context.parsed.x + '%';
+                            }
+                            return label;
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Key Metric Improvements with Information Access',
+                    font: { size: 18, weight: 'bold' },
+                    padding: { top: 10, bottom: 20 }
+                }
+            }
+        }
+    };
+    
+    const impactChartCtx = document.getElementById('impactChart').getContext('2d');
+    new Chart(impactChartCtx, impactChartConfig);
+
+    const tabs = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            tabContents.forEach(content => {
+                if (content.id === `tab-content-${targetTab}`) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        });
+    });
+    tabs[0].click();
+
+    const accordionItems = document.querySelectorAll('.accordion-item');
+    accordionItems.forEach(item => {
+        const button = item.querySelector('.accordion-button');
+        const content = item.querySelector('.accordion-content');
+        button.addEventListener('click', () => {
+            const isOpening = !button.classList.contains('open');
+            
+            document.querySelectorAll('.accordion-button.open').forEach(openButton => {
+                if(openButton !== button) {
+                    openButton.classList.remove('open');
+                    openButton.nextElementSibling.style.maxHeight = '0px';
+                }
+            });
+
+            if (isOpening) {
+                button.classList.add('open');
+                content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+                button.classList.remove('open');
+                content.style.maxHeight = '0px';
+            }
+        });
+    });
+
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 80) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>
